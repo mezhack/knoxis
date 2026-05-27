@@ -20,12 +20,16 @@ class ElectionPublicView(APIView):
     authentication_classes = []
 
     def get(self, request, slug):
-        try:
-            election = Election.objects.select_related("organization").get(
-                organization__slug=slug
+        election = (
+            Election.objects.select_related("organization")
+            .filter(organization__slug=slug, status="em_andamento")
+            .first()
+        )
+        if election is None:
+            return Response(
+                {"message": "Não há votação em andamento para esta organização."},
+                status=200,
             )
-        except Election.DoesNotExist:
-            return Response({"detail": "Eleição não encontrada."}, status=404)
 
         open_esc = election.escrutinios.filter(status="aberto").first()
         data = {
