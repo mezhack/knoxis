@@ -104,14 +104,12 @@ class IdentifyView(APIView):
         if not cpf_utils.is_valid(raw_cpf):
             return Response({"type": "validation_error", "status": 400, "detail": "CPF inválido."}, status=400)
 
-        try:
-            election = Election.objects.select_related("organization").get(
-                organization__slug=slug
-            )
-        except Election.DoesNotExist:
-            return Response({"detail": "Eleição não encontrada."}, status=404)
-
-        if election.status != "em_andamento":
+        election = (
+            Election.objects.select_related("organization")
+            .filter(organization__slug=slug, status="em_andamento")
+            .first()
+        )
+        if election is None:
             return Response({"detail": "Eleição não está em andamento."}, status=409)
 
         open_esc = election.escrutinios.filter(status="aberto").first()
