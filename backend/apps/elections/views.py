@@ -30,9 +30,6 @@ class ElectionViewSet(TenantScopedViewSet, ModelViewSet):
     permission_classes = [IsOrganizationMember]
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related("positions", "voters")
-
-    def get_queryset(self):
         org = self.request.current_organization
         return Election.objects.filter(organization=org).prefetch_related("positions", "voters", "escrutinios")
 
@@ -44,6 +41,17 @@ class ElectionViewSet(TenantScopedViewSet, ModelViewSet):
         if self.action in ("partial_update", "update"):
             return ElectionPatchSerializer
         return ElectionDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            ElectionDetailSerializer(serializer.instance).data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
 
     def perform_create(self, serializer):
         org = self.request.current_organization
