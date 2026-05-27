@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.models import AuditLog, get_client_ip
 from apps.core.permissions import IsOrganizationMember
 from apps.elections.models import Candidate, Election, Position
 
@@ -220,6 +221,15 @@ class EscrutinioOpenView(APIView):
                                 candidate=ec.candidate,
                             )
 
+            AuditLog.objects.create(
+                organization=org,
+                user=request.user,
+                action="escrutinio.opened",
+                target_type="escrutinio",
+                target_id=esc.id,
+                payload={"election_id": esc.election_id, "number": esc.number},
+                ip_address=get_client_ip(request),
+            )
             logger.info("escrutinio.opened", escrutinio_id=esc.id, election_id=esc.election_id, user_id=request.user.id)
 
         return Response({"id": esc.id, "status": esc.status, "opened_at": esc.opened_at})
@@ -267,6 +277,15 @@ class EscrutinioCloseView(APIView):
                 election.ended_at = timezone.now()
                 election.save()
 
+        AuditLog.objects.create(
+            organization=org,
+            user=request.user,
+            action="escrutinio.closed",
+            target_type="escrutinio",
+            target_id=esc.id,
+            payload={"election_id": esc.election_id, "number": esc.number, "total_voters": resultado.total_voters},
+            ip_address=get_client_ip(request),
+        )
         logger.info("escrutinio.closed", escrutinio_id=esc.id, election_id=esc.election_id, user_id=request.user.id)
         return Response(_build_result_response(resultado, esc.election))
 

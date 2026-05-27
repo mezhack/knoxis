@@ -10,6 +10,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.models import AuditLog, get_client_ip
+
 from .models import OrganizationMember
 from .serializers import (
     LoginSerializer,
@@ -52,6 +54,14 @@ class SignupView(APIView):
         user, org = serializer.save()
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         logger.info("user.signup", user_id=user.id, org_id=org.id)
+        AuditLog.objects.create(
+            organization=org,
+            user=user,
+            action="account.signup",
+            target_type="organization",
+            target_id=org.id,
+            ip_address=get_client_ip(request),
+        )
         return Response(
             {
                 "user": UserSerializer(user).data,
@@ -88,6 +98,11 @@ class LoginView(APIView):
             for m in memberships
         ]
         logger.info("user.login", user_id=user.id)
+        AuditLog.objects.create(
+            user=user,
+            action="account.login",
+            ip_address=get_client_ip(request),
+        )
         return Response({"user": UserSerializer(user).data, "organizations": organizations})
 
 

@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.core.mixins import TenantScopedViewSet
+from apps.core.models import AuditLog, get_client_ip
 from apps.core.permissions import IsOrganizationMember, IsOrganizationOwner
 
 from .models import Candidate, Election, Position, Voter
@@ -51,6 +52,16 @@ class ElectionViewSet(TenantScopedViewSet, ModelViewSet):
             created_by=self.request.user,
         )
         logger.info("election.created", org_id=org.id, user_id=self.request.user.id)
+        election = serializer.instance
+        AuditLog.objects.create(
+            organization=org,
+            user=self.request.user,
+            action="election.created",
+            target_type="election",
+            target_id=election.id,
+            payload={"name": election.name},
+            ip_address=get_client_ip(self.request),
+        )
 
     @action(detail=True, methods=["post"], url_path="start")
     def start(self, request, pk=None):
@@ -156,6 +167,15 @@ class VoterImportView(APIView):
             election_id=election.id,
             imported=result["imported"],
             skipped=result["skipped_duplicate"] + result["skipped_invalid"],
+        )
+        AuditLog.objects.create(
+            organization=org,
+            user=request.user,
+            action="election.voters.imported",
+            target_type="election",
+            target_id=election.id,
+            payload={"imported": result["imported"], "skipped_duplicate": result["skipped_duplicate"], "skipped_invalid": result["skipped_invalid"]},
+            ip_address=get_client_ip(request),
         )
         return Response(result)
 
