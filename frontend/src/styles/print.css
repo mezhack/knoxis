@@ -1,0 +1,60 @@
+@media print {
+  /* Oculta tudo que não é o relatório */
+  nav,
+  header,
+  aside,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    font-family: serif;
+    font-size: 12pt;
+    color: #000;
+  }
+
+  .print-container {
+    display: block !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    page-break-inside: avoid;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    border: 1px solid #999;
+    padding: 4pt 8pt;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 16pt;
+  }
+
+  h2 {
+    font-size: 14pt;
+  }
+
+  h3 {
+    font-size: 12pt;
+  }
+
+  .elected-row {
+    font-weight: bold;
+    background: #f0f0f0;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 2cm;
+  }
+}
