@@ -44,7 +44,8 @@ export class ApiError extends Error {
     public status: number,
     public data: Record<string, unknown>
   ) {
-    super(String(data?.title || data?.detail || "Erro desconhecido"));
+    const message = String(data?.title || data?.detail || `Erro ${status}`);
+    super(message);
     this.name = "ApiError";
   }
 }

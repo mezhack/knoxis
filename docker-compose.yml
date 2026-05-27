@@ -40,6 +40,8 @@ services:
   frontend:
     image: node:20-alpine
     working_dir: /app
+    environment:
+      VITE_API_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
       - node_modules:/app/node_modules
