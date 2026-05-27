@@ -382,6 +382,8 @@ class ResolveTieView(APIView):
                     r.tie_resolution = note or "Adiado para próximo escrutínio"
                     r.save()
             elif action == "elect_both":
+                if request.data.get("vacancies_adjusted") is not True:
+                    return Response({"detail": "elect_both requer vacancies_adjusted: true."}, status=400)
                 for r in tie_results:
                     r.was_elected = True
                     r.tie_at_cutoff = False

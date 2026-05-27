@@ -1,4 +1,5 @@
 import structlog
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
@@ -48,35 +49,6 @@ class ElectionPublicView(APIView):
 
         return Response(data)
 
-
-class ElectionByIdPublicView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    def get(self, request, pk):
-        try:
-            election = Election.objects.select_related("organization").get(pk=pk)
-        except Election.DoesNotExist:
-            return Response({"detail": "Eleição não encontrada."}, status=404)
-
-        open_esc = election.escrutinios.filter(status="aberto").first()
-        data = {
-            "election": {
-                "id": election.id,
-                "name": election.name,
-                "organization_name": election.organization.name,
-                "organization_slug": election.organization.slug,
-                "status": election.status,
-            },
-            "current_escrutinio": None,
-        }
-
-        if open_esc:
-            data["current_escrutinio"] = {"id": open_esc.id, "number": open_esc.number, "status": open_esc.status}
-        else:
-            data["message"] = "Não há escrutínio aberto no momento."
-
-        return Response(data)
 
 
 class IdentifyView(APIView):
@@ -154,6 +126,7 @@ class IdentifyView(APIView):
             session.token,
             max_age=600,
             httponly=True,
+            secure=not settings.DEBUG,
             samesite="Lax",
             path="/api/v1/public/ballot",
         )
